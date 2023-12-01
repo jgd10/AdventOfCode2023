@@ -20,7 +20,7 @@ fn part1(){
     for row in data {
         num_row = Vec::new();
         for character in row.iter() {
-            if character.is_digit(10) {
+            if character.is_ascii_digit() {
                 num_row.push(*character)
             }
         }
@@ -65,7 +65,7 @@ fn part2(){
         rindices = Vec::new();
         rnum_row = Vec::new();
         string_row = row.iter().collect();
-        for (i, substring) in numbers_strings.iter_mut().enumerate() {
+        for substring in numbers_strings.iter_mut() {
             if string_row.contains(*substring) {
                 num_row.push(map_word(substring));
                 indices.push(string_row.find(*substring).unwrap());
