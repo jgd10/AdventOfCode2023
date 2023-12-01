@@ -77,7 +77,6 @@ fn part2(){
         rpermutation = permutation::sort(rindices.clone());
         num_row = permutation.apply_slice(&num_row);
         rnum_row = rpermutation.apply_slice(&rnum_row);
-        println!("{:?}, {:?}", num_row, rnum_row);
         string_num = String::new();
         string_num.push_str(num_row[0]);
         string_num.push_str(rnum_row[rnum_row.len() - 1]);
