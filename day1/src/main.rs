@@ -1,3 +1,4 @@
+
 use permutation::Permutation;
 
 fn parse_input() -> Vec<Vec<char>>{
@@ -86,7 +87,40 @@ fn part2(){
 }
 
 
+fn part2_improved(){
+    let data: Vec<Vec<char>> = parse_input();
+    let mut total: u32 = 0;
+    let mut string_num: String;
+    let mut num_row: Vec<&str>;
+    let mut indices: Vec<usize>;
+    let mut permutation: Permutation;
+    let mut string_row: String;
+    let mut numbers_strings = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "1", "2", "3", "4", "5", "6", "7", "8", "9"];
+    for row in data {
+        indices = Vec::new();
+        num_row = Vec::new();
+        string_row = row.iter().collect();
+        for substring in numbers_strings.iter_mut() {
+            let matching_indices: Vec<_> = string_row.match_indices(*substring).collect();
+            for pair in matching_indices {
+                num_row.push(map_word(substring));
+                indices.push(pair.0);
+            }
+            
+        }
+        permutation = permutation::sort(indices.clone());
+        num_row = permutation.apply_slice(&num_row);
+        string_num = String::new();
+        string_num.push_str(num_row[0]);
+        string_num.push_str(num_row[num_row.len() - 1]);
+        total += string_num.parse::<u32>().unwrap();
+    }
+    println!("{}", total);
+}
+
+
 fn main() {
     part1();
     part2();
+    part2_improved();
 }
