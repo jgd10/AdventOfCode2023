@@ -34,32 +34,18 @@ impl Scratchcard {
 impl Deck {
     fn get_size(&mut self) -> usize {
         self.evaluate();
-        let mut total: usize = 0;
-        for value in self.numbers.values() {
-            total += value
-        }
-        total
+        self.numbers.values().sum()
     }
     fn evaluate(&mut self) {
         let mut start_id: usize;
         let mut end_id: usize;
         let mut card_score: usize;
-        let max_cards: usize = self.cards.len();
         for (id_, card) in &self.cards {
             card_score = card.get_num_wins();
             start_id = id_ + 1;
             end_id = id_ + card_score;
-            if start_id > max_cards {
-                start_id = max_cards;
-                end_id = max_cards;
-            }
-            if end_id > max_cards {
-                end_id = max_cards;
-            }
-            if id_ != &max_cards{
-                for i in start_id..=end_id {
-                    *self.numbers.entry(i).or_insert(0) += self.numbers[id_];
-                }
+            for i in start_id..=end_id {
+                *self.numbers.entry(i).or_insert(0) += self.numbers[id_];
             }
         }
     }
@@ -67,7 +53,7 @@ impl Deck {
 
 
 fn get_input_lines() -> Vec<&'static str>{
-    let input: &str = include_str!("../input.txt");
+    let input: &str = include_str!("../example.txt");
     let mut data: Vec<&str> = Vec::new();
     for line in input.lines() {
         data.push(line)
