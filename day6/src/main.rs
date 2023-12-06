@@ -1,4 +1,5 @@
 use itertools::izip;
+use std::time::Instant;
 
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,9 +52,10 @@ fn parse_input2() -> Race{
 
 fn part1() {
     let races: Vec<Race> = parse_input1();
-    let mut counter: usize = 0;
+    let mut counter: usize;
     let mut total: usize = 1;
     for race in races {
+        counter = 0;
         for t in 0..race.time {
             if race.will_time_win(t) {
                 counter += 1;
@@ -77,6 +79,11 @@ fn part2() {
 
 
 fn main() {
+    
+    let mut before = Instant::now();
     part1();
+    println!("Elapsed time: {:.2?}", before.elapsed());
+    before = Instant::now();
     part2();
+    println!("Elapsed time: {:.2?}", before.elapsed());
 }
