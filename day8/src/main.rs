@@ -1,6 +1,7 @@
 mod aoc_parser;
 use std::collections::HashMap;
 use aoc_parser::{get_input_lines, InputType};
+use num::integer::lcm;
 
 #[derive(Clone, Debug)]
 enum Direction {
@@ -32,6 +33,9 @@ impl Commands {
         self.current += 1;
         result
     }
+    fn reset(&mut self) {
+        self.current = 0;
+    }
 }
 
 fn commands_from_str(line: &str) -> Commands {
@@ -59,11 +63,10 @@ fn parse_input() -> (Commands, HashMap<String, (String, String)>){
     (commands, network)
 }
 
-fn part1(){
-    let mut maps: (Commands, HashMap<String, (String, String)>) = parse_input();
-    let mut location: &str = "AAA";
-    let mut counter: usize = 0;
-    while location != "ZZZ" {
+fn find_steps_to_end(start: &str, condition: &dyn Fn(String) -> bool, mut maps: (Commands, HashMap<String, (String, String)>)) -> u128{
+    let mut location: &str = start;
+    let mut counter: u128 = 0;
+    while condition(location.to_string().clone()) {
         let direction: Direction = maps.0.get_next();
         counter += 1;
         match direction {
@@ -71,7 +74,13 @@ fn part1(){
             Direction::Right => location = &maps.1[location].1,
         }
     }
-    println!("Part 1: {}", counter)
+    maps.0.reset();
+    counter
+}
+
+fn part1(){
+    let maps: (Commands, HashMap<String, (String, String)>) = parse_input();
+    println!("Part 1: {}", find_steps_to_end("AAA", &is_not_end_node1, maps.clone()))
 }
 
 fn get_start_nodes(map_: HashMap<String, (String, String)>) -> Vec<String>{
@@ -84,6 +93,14 @@ fn get_start_nodes(map_: HashMap<String, (String, String)>) -> Vec<String>{
     starts
 }
 
+fn is_not_end_node1(location: String) -> bool {
+    location != "ZZZ"
+}
+
+fn is_not_end_node2(location: String) -> bool {
+    !location.ends_with('Z')
+}
+
 fn all_end_nodes(locations: Vec<String>) -> bool {
     for location in locations {
         if !location.ends_with('Z') {
@@ -93,7 +110,7 @@ fn all_end_nodes(locations: Vec<String>) -> bool {
     true
 }
 
-fn part2(){
+fn part2_brute_force(){
     let mut maps: (Commands, HashMap<String, (String, String)>) = parse_input();
     let mut locations: Vec<String> = get_start_nodes(maps.1.clone());
     let mut counter: usize = 0;
@@ -110,6 +127,26 @@ fn part2(){
         locations = new_locs;
     }
     println!("Part 2: {}", counter)
+}
+
+fn get_lcm_of_vector(vec: Vec<u128>) -> u128 {
+    let mut lowest_multiple: u128 = lcm(vec[0], vec[1]);
+    for number in vec[2..].into_iter() {
+        lowest_multiple = lcm(lowest_multiple, *number);
+    }
+    lowest_multiple
+}
+
+fn part2(){
+    let maps: (Commands, HashMap<String, (String, String)>) = parse_input();
+    let locations: Vec<String> = get_start_nodes(maps.1.clone());
+    let answer: u128;
+    let mut steps_for_each_route: Vec<u128> = Vec::new();
+    for location in locations {
+        steps_for_each_route.push(find_steps_to_end(&location, &is_not_end_node2, maps.clone()))
+    }
+    answer = get_lcm_of_vector(steps_for_each_route);
+    println!("Part 2: {}", answer)
 }
 
 fn main() {
