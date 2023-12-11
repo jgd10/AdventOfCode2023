@@ -10,14 +10,6 @@ enum Direction {
 }
 
 #[derive(Clone, Debug)]
-struct Node {
-    name: String,
-    left: String,
-    right: String,
-
-}
-
-#[derive(Clone, Debug)]
 struct Commands {
     current: usize,
     instructions: Vec<Direction>,
@@ -99,34 +91,6 @@ fn is_not_end_node1(location: String) -> bool {
 
 fn is_not_end_node2(location: String) -> bool {
     !location.ends_with('Z')
-}
-
-fn all_end_nodes(locations: Vec<String>) -> bool {
-    for location in locations {
-        if !location.ends_with('Z') {
-            return false;
-        }
-    }
-    true
-}
-
-fn part2_brute_force(){
-    let mut maps: (Commands, HashMap<String, (String, String)>) = parse_input();
-    let mut locations: Vec<String> = get_start_nodes(maps.1.clone());
-    let mut counter: usize = 0;
-    while !all_end_nodes(locations.clone()) == true {
-        let direction: Direction = maps.0.get_next();
-        counter += 1;
-        let mut new_locs: Vec<String> = Vec::new();
-        for location in locations.clone() {
-            match direction {
-                Direction::Left => new_locs.push(maps.1[&location].0.clone()),
-                Direction::Right => new_locs.push(maps.1[&location].1.clone()),
-            }
-        }
-        locations = new_locs;
-    }
-    println!("Part 2: {}", counter)
 }
 
 fn get_lcm_of_vector(vec: Vec<u128>) -> u128 {
