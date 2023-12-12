@@ -1,4 +1,3 @@
-import itertools
 from itertools import product
 from dataclasses import dataclass
 from typing import Collection
@@ -88,6 +87,42 @@ class PuzzleLine:
                     counter += 1
         return counter
 
+    def get_number_valid_arrangements2(self) -> int:
+        def can_insert(sequence: list[int], count: int, index: int):
+            # Take the region the chunk *could* go into out of the sequence of springs
+            insert_region = sequence[index:index+count]
+            # If the region isn't long enough that's a fail
+            if len(insert_region) != count:
+                return False
+            # The char after the sequence should either be the end of the list or a 0/9
+            if index+count < len(sequence):
+                if sequence[index+count] not in [0, 9]:
+                    return False
+            # Finally, all elements of the sequence should only contain springs or ? (9)
+            if set(sequence[index:index+count]) not in [{1, 9}, {1}, {9}]:
+                return False
+
+            # the pattern *can* be inserted here!
+            return True
+
+        def get_num_poss(sequence, counts):
+            total = 0
+            # minimum_remaining_space = sum(counts[1:]) + len(counts[1:])
+            if len(sequence) < sum(counts) + len(counts) - 1:
+                return total
+            for i, count in enumerate(counts):
+                match sequence[0]:
+                    case 0:
+                        pass
+                    case 1:
+                        total += 1
+                        sequence = sequence[count+1:]
+                    case 9:
+                        total += get_num_poss([0] + sequence[1:], counts) + get_num_poss([1] + sequence[1:], counts)
+            return total
+
+        return get_num_poss(self.springs, self.counts[:])
+
     def fill_line_with_arrangement(self, arrangement: list[int]):
         new_spring = []
         for spring in self.springs:
@@ -112,7 +147,8 @@ def part1():
         lines.append(PuzzleLine(springs, counts))
     total = 0
     for i, line in enumerate(lines):
-        counter = line.get_number_valid_arrangements()
+        counter = line.get_number_valid_arrangements2()
+        print(counter)
         total += counter
     print(f'Part 1 Answer = {total}')
 
@@ -130,14 +166,14 @@ def part2():
         counts = [int(c) for c in count_str.split(',')]*5
         lines.append(PuzzleLine(springs, counts))
     for i, line in enumerate(lines):
-        counter = line.get_number_valid_arrangements()
+        counter = line.get_number_valid_arrangements2()
         print(counter, i)
         total += counter
     print(f'Part 2 Answer = {total}')
 
 
 def get_input_data():
-    with open('../input.txt') as f:
+    with open('../example.txt') as f:
         data = [s.strip('\n') for s in f.readlines()]
     return data
 
