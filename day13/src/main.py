@@ -22,50 +22,69 @@ class Valley:
         return self._cols
 
     def display(self):
-        print('\n'.join([''.join(r) for r in self.rows]))
+        return '\n'.join([''.join(r) for r in self.rows])
 
-    def check_for_reflection_point_in_rows(self) -> tuple[bool, int]:
+    def check_for_reflection_point_in_rows(self) -> tuple[bool, list[int]]:
         return self.find_reflection_point_in(SliceType.ROWS)
 
-    def check_for_reflection_point_in_cols(self) -> tuple[bool, int]:
+    def check_for_reflection_point_in_cols(self) -> tuple[bool, list[int]]:
         return self.find_reflection_point_in(SliceType.COLS)
 
     def find_reflection_point_in(self, slice_type: SliceType):
         match slice_type:
             case SliceType.ROWS:
-                data = self.rows[:]
+                pattern = copy.deepcopy(self.rows)
             case SliceType.COLS:
-                data = self.cols[:]
+                pattern = copy.deepcopy(self.cols)
+            case _:
+                raise TypeError
         reflection_found = False
-        reflection_number = 0
-        for mirror in range(1, len(data)):
-            section1 = data[:mirror]
-            section2 = data[mirror:]
-            if mirror <= len(data) // 2:
+        reflection_numbers = []
+        for mirror in range(1, len(pattern)):
+            section1 = pattern[:mirror]
+            section2 = pattern[mirror:]
+            if mirror <= len(pattern) // 2:
                 section2 = section2[:len(section1)]
             else:
                 section1 = section1[-len(section2):]
             if section1 == section2[::-1]:
                 reflection_found = True
-                reflection_number = mirror
-                break
-        if reflection_found:
-            return reflection_found, reflection_number
-        else:
-            return reflection_found, reflection_number
+                reflection_numbers.append(mirror)
+
+        return reflection_found, reflection_numbers
 
     def find_reflection_number(self):
         reflection_row, number_row = self.check_for_reflection_point_in_rows()
         reflection_col, number_col = self.check_for_reflection_point_in_cols()
-        return (number_col, number_row*100)
+        return number_col, [i*100 for i in number_row]
 
     def all_possible_smudges(self):
         new = []
-        for i, row in enumerate(self.rows):
-            for j, c in enumerate(row):
+        n = len(self.rows)
+        m = len(self.rows[0])
+        answer = """.#.###.....
+#..#.##...#
+.#.....#.#.
+.#.....#.#.
+#..#.##...#
+.#.###.....
+####..##.##
+#....##..#.
+.##.##.#.##
+...#..###.#
+...#..###.#
+.##.##.#.##
+#....##..#.
+####..##.##
+.#.###.....
+#..#.##...#
+.#.....#.#."""
+        for i in range(n):
+            for j in range(m):
                 new_rows = copy.deepcopy(self.rows)
                 new_rows[i][j] = flip(new_rows[i][j])
-                new.append(Valley(new_rows))
+                v = Valley(new_rows)
+                new.append(v)
         return new
 
 
@@ -94,21 +113,31 @@ def parse_input(fname: pathlib.Path) -> list[Valley]:
 def part1():
     valleys = parse_input(pathlib.Path('../input.txt'))
     totals = [v.find_reflection_number() for v in valleys]
-    print(f'Part 1 Answer: {sum([t[0]+t[1] for t in totals])}')
+    print(f'Part 1 Answer: {sum([sum(t[0]) + sum(t[1]) for t in totals])}')
 
 def part2():
     valleys = parse_input(pathlib.Path('../input.txt'))
     total = 0
-    for valley in valleys:
+    answers = []
+    old_answers = []
+    for i, valley in enumerate(valleys):
         initial_result = valley.find_reflection_number()
+        initial_number = {j for entry in initial_result for j in entry}.pop()
+        old_answers.append(max(initial_result))
         results = [v.find_reflection_number() for v in valley.all_possible_smudges()]
         for result in results:
-            if initial_result[0] != result[0] and result[0] != 0:
-                total += result[0]
+            numbers = {j for entry in result for j in entry}
+            if numbers and numbers != {initial_number}:
+                if i in [19, 20, 21, 22]:
+                    print()
+                if initial_number in numbers:
+                    numbers.remove(initial_number)
+                num = numbers.pop()
+                answers.append(num)
+                total += num
                 break
-            if initial_result[1] != result[1] and result[1] != 0:
-                total += result[1]
-                break
+    print(answers)
+    assert(len(answers) == len(valleys))
     print(f'Part 2 Answer: {total}')
 
 
