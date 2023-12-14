@@ -33,7 +33,7 @@ impl Platform {
     fn move_rock(&mut self, coord: (i32, i32), direction: Direction) {
         assert!(self.rocks.contains(&coord));
         let mut can_move: bool = true;
-        let mut new_coord: (i32, i32) = coord.clone();
+        let mut new_coord: (i32, i32) = coord;
         let mut trial_coord: (i32, i32);
 
         while can_move {
@@ -107,32 +107,54 @@ impl Platform {
         total
     }
     fn get_load_after(&mut self, direction: Direction, cycles: i32) -> i32{
-        let mut cache: BTreeSet<BTreeSet<(i32, i32)>> = BTreeSet::new();
-        let mut load: i32 = 0;
-        // cache.insert(self.rocks.clone());
-        for _i in 0..cycles {
-            if cache.contains(&self.rocks){
-                //println!("{}", _i);
+        let mut cache: BTreeMap<BTreeSet<(i32, i32)>, i32> = BTreeMap::new();
+        let mut n: i32 = 0;
+        while n < cycles {
+            if cache.contains_key(&self.rocks){
+                let offset = cache.get(&self.rocks).unwrap();
+                let state_length = n - offset;
+                let remaining = (cycles - offset) % state_length;
+                n = cycles - remaining;
             }
             else {
-                cache.insert(self.rocks.clone());
-                
+                cache.insert(self.rocks.clone(), n); 
             }
             self.tilt(Direction::North);
             self.tilt(Direction::West);
             self.tilt(Direction::South);
             self.tilt(Direction::East);
-            dbg!(_i, self.get_load(direction));
-            //dbg!(_i, load);
+            n += 1;
         }
         self.get_load(direction)
+    }
+    #[allow(dead_code)]
+    fn display(&self) -> String{
+        let mut display_string = String::new();
+        for i in 0..self.height{
+            let mut row = String::new();
+            for j in 0..self.width {
+                if self.rocks.contains(&(i, j)) {
+                    row.push('O');
+                }
+                else if self.fixed.contains(&(i,j)) {
+                    row.push('#')
+                }
+                else if self.grid.contains_key(&(i, j)){
+                    row.push('.');
+                }
+            }
+            display_string.push_str(&row.to_string());
+            display_string.push_str(&format!("--- {}", (i - self.height).abs()));
+            display_string.push('\n');
+        }
+        display_string
     }
 }
 
 
 fn parse_input(mut string: &str) -> Platform{
     if string.is_empty(){
-        string = include_str!("../example.txt");
+        string = include_str!("../input.txt");
     }
     let data = get_input_as_chars(string);
     let mut platform: HashMap<(i32, i32), char> = HashMap::new();
@@ -148,7 +170,7 @@ fn parse_input(mut string: &str) -> Platform{
             }
         }
     }
-    Platform{height: data.len() as i32, width: data[0].len() as i32, grid: platform, rocks: rocks, fixed: fixed_rocks}
+    Platform{height: data.len() as i32, width: data[0].len() as i32, grid: platform, rocks, fixed: fixed_rocks}
 }
 
 #[test]
@@ -242,7 +264,7 @@ fn part1(){
 
 fn part2(){
     let mut platform: Platform = parse_input("");
-    println!("Part 2 Answer: {}", platform.get_load_after(Direction::North, 100));
+    println!("Part 2 Answer: {}", platform.get_load_after(Direction::North, 1_000_000_000));
 }
 
 fn main() {
