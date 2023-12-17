@@ -1,5 +1,6 @@
 mod aoc_parser;
-use std::collections::{HashMap, HashSet, BTreeSet, VecDeque};
+use std::collections::{HashMap, HashSet};
+use std::cmp::min;
 
 use aoc_parser::get_input_as_chars;
 
@@ -16,21 +17,18 @@ enum Direction {
     S,
     E,
     W,
-    None,
 }
 
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Network {
-    blocks: HashMap<Coord, Block>,
+    blocks: HashMap<BigCoord, Block>,
     visited: HashSet<Coord>,
 }
 
 impl Network {
     fn dijkstra(&mut self) {
         let mut current_block: Block = self.get_start_block();
-        current_block.weight = current_block.loss;
-
         // Start the queue with 2 nodes one going E one going S
         // They start with 1 step!
         let mut queue: Vec<BigCoord> = Vec::from(
@@ -38,29 +36,29 @@ impl Network {
              BigCoord::from_coord(current_block.coord, Direction::S)]);
 
         // get all the x,y coords possible
-        let all_coords: HashSet<Coord> = self.blocks.keys().cloned().collect();
+        let all_coords: HashSet<BigCoord> = self.blocks.keys().cloned().collect();
         // set of all the nodes we've been to (none so far)
         let mut visited: HashSet<BigCoord> = HashSet::new();
 
-        while current_block.type_ != BlockType::End  && queue.len() > 0{
+        while  queue.len() > 0 {
             // pop out the node in our queue with the smallest weight
             let current_node = get_shortest_distance_in_queue(&mut queue, self.blocks.clone());
             // add it to the visited list
             visited.insert(current_node);
             // get its associated block (contains the heat loss and weighting)
-            current_block = *self.blocks.get_mut(&current_node.coord).unwrap();
+            current_block = *self.blocks.get_mut(&current_node).unwrap();
 
             // get the neighbors of that block, there should be no more than 3
-            // e.g. if starting going east then next blocks would be east, north, south, but not west,
+            // e.g. if starting going east (with 2 steps east taken) then next blocks would be east, north, south, but not west,
             // because you can't go back on yourself (not immediately anyway)
             let neighbors = get_neighbor_coords(current_node);
             for neighbor in neighbors {
                 // if the neighbor exists in space AND hasn't been visited AND isn't in the queue then we consider it
-                if all_coords.contains(&neighbor.coord) && !visited.contains(&neighbor) && !queue.contains(&neighbor){
+                if all_coords.contains(&neighbor) && !visited.contains(&neighbor) && !queue.contains(&neighbor){
                     // add neighbor to queue to be considered next!
                     queue.push(neighbor);
                     // get the block object which contains weights and such
-                    let block = self.blocks.get_mut(&neighbor.coord).unwrap();
+                    let block = self.blocks.get_mut(&neighbor).unwrap();
                     let alternative_distance = current_block.weight + block.loss;
                     // Do the dijkstra bit
                     if alternative_distance < block.weight {
@@ -71,13 +69,14 @@ impl Network {
         }
 
     }
-    fn get_end_block(&self) -> &Block{
+    fn get_end_block_weights(&self) -> usize{
+        let mut min_weight: usize = 999999999;
         for block in self.blocks.values(){
             if block.type_ == BlockType::End {
-                return block;
+                min_weight = min(block.weight, min_weight);
             }
         }
-        unreachable!();
+        min_weight
     }
     fn get_start_block(&mut self) -> Block{
         for block in self.blocks.values(){
@@ -117,8 +116,8 @@ struct Block {
 }
 
 
-fn get_shortest_distance_in_queue(queue: &mut Vec<BigCoord>, blocks: HashMap<Coord, Block>) -> BigCoord {
-    queue.sort_by_key(|x| blocks.get(&x.coord).unwrap().weight);
+fn get_shortest_distance_in_queue(queue: &mut Vec<BigCoord>, blocks: HashMap<BigCoord, Block>) -> BigCoord {
+    queue.sort_by_key(|x| blocks.get(&x).unwrap().weight);
     queue.remove(0)
 }
 
@@ -165,10 +164,10 @@ fn get_neighbor_coords(start: BigCoord) -> HashSet<BigCoord>{
 
 
 fn parse_input() -> Network{
-    let data = get_input_as_chars(include_str!("../example.txt"));
+    let data = get_input_as_chars(include_str!("../input.txt"));
     let imax = data.len()-1;
     let jmax = data[0].len() -1;
-    let mut blocks: HashMap<Coord, Block> = HashMap::new();
+    let mut blocks: HashMap<BigCoord, Block> = HashMap::new();
     for (i, row) in data.iter().enumerate(){
         for (j, c) in row.iter().enumerate() {
             let coord = Coord{i, j};
@@ -176,7 +175,7 @@ fn parse_input() -> Network{
             let mut weight: usize = 999999999;
             if (i, j) == (0, 0){
                 block_type = BlockType::Start;
-                weight = 0;
+                weight = 0 ;
             }
             else if (i, j) == (imax, jmax) {
                 block_type = BlockType::End;
@@ -184,12 +183,18 @@ fn parse_input() -> Network{
             else{
                 block_type = BlockType::None;
             }
-            blocks.insert(coord, Block { 
-                coord: Coord{i, j}, 
-                loss: c.to_digit(10).unwrap() as usize ,
-                type_: block_type, 
-                weight: weight,
-            });
+            for direction in [Direction::N, Direction::E, Direction::S, Direction::W]{
+                for steps in 0..3{
+                    blocks.insert(BigCoord{coord, direction, steps: steps as usize}, Block { 
+                        coord: Coord{i, j}, 
+                        loss: c.to_digit(10).unwrap() as usize ,
+                        type_: block_type, 
+                        weight: weight,
+                    });
+                }
+
+            }
+
             
         }
     }
@@ -199,7 +204,7 @@ fn parse_input() -> Network{
 fn part1(){
     let mut network = parse_input();
     network.dijkstra();
-    println!("Part 1 Answer: {}", network.get_end_block().weight);
+    println!("Part 1 Answer: {:?}", network.get_end_block_weights());
 }
 
 
