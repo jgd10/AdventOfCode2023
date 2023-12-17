@@ -28,6 +28,44 @@ struct Network {
 }
 
 impl Network {
+    fn dijkstra0(&mut self) {
+        let current_block: Block = self.get_start_block();
+        // Start the queue with 2 nodes one going E one going S
+        // They start with 1 step!
+        let mut queue: BTreeSet<(usize, BigCoord)> = BTreeSet::from(
+            [(0, BigCoord::from_coord(current_block.coord, Direction::E)), 
+             (0, BigCoord::from_coord(current_block.coord, Direction::S))]);
+        let mut big_coords_done_with: HashSet<BigCoord> = HashSet::from([
+            BigCoord::from_coord(current_block.coord, Direction::E), 
+            BigCoord::from_coord(current_block.coord, Direction::S)]);
+        
+
+        let mut visited: HashSet<BigCoord> = HashSet::new();
+
+        while queue.len() > 0 {
+            let current_node = queue.pop_first().unwrap();
+            visited.insert(current_node.1);
+            // current_block = *self.blocks.get_mut(&current_node.1).unwrap();
+
+            let neighbors = get_neighbor_coords0(current_node.1, self.limits);
+            for neighbor in neighbors {
+                // if the coord hasn't been worked on (copy of queue) AND hasn't been visited yet, slam it in
+                if !big_coords_done_with.contains(&neighbor) && !visited.contains(&neighbor){
+                    // get the block object which contains weights and such
+                    let block = self.blocks.get_mut(&neighbor).unwrap();
+                    let alternative_distance = current_node.0 + block.loss;
+                    // Do the dijkstra bit
+                    if alternative_distance < block.weight {
+                        block.weight = alternative_distance;
+                    }
+                    // add neighbor to queue to be considered next!
+                    queue.insert((block.weight, neighbor));
+                    big_coords_done_with.insert(neighbor);
+                }
+            }
+        }
+
+    }
     fn dijkstra(&mut self) {
         let mut current_block: Block = self.get_start_block();
         // Start the queue with 2 nodes one going E one going S
@@ -71,7 +109,7 @@ impl Network {
 
     }
     fn dijkstra2(&mut self) {
-        let mut current_block: Block = self.get_start_block();
+        let current_block: Block = self.get_start_block();
         // Start the queue with 2 nodes one going E one going S
         // They start with 1 step!
         let mut queue: BTreeSet<(usize, BigCoord)> = BTreeSet::from(
@@ -82,28 +120,20 @@ impl Network {
             BigCoord::from_coord(current_block.coord, Direction::S)]);
         
 
-        // get all the x,y coords possible
-        // set of all the nodes we've been to (none so far)
         let mut visited: HashSet<BigCoord> = HashSet::new();
 
         while queue.len() > 0 {
-            // pop out the node in our queue with the smallest weight
             let current_node = queue.pop_first().unwrap();
-
-            // add it to the visited list
             visited.insert(current_node.1);
-            // get its associated block (contains the heat loss and weighting)
-            current_block = *self.blocks.get_mut(&current_node.1).unwrap();
-            // get the neighbors of that block, there should be no more than 3
-            // e.g. if starting going east (with 2 steps east taken) then next blocks would be east, north, south, but not west,
-            // because you can't go back on yourself (not immediately anyway)
+            // current_block = *self.blocks.get_mut(&current_node.1).unwrap();
+
             let neighbors = get_neighbor_coords2(current_node.1, self.limits);
             for neighbor in neighbors {
                 // if the coord hasn't been worked on (copy of queue) AND hasn't been visited yet, slam it in
                 if !big_coords_done_with.contains(&neighbor) && !visited.contains(&neighbor){
                     // get the block object which contains weights and such
                     let block = self.blocks.get_mut(&neighbor).unwrap();
-                    let alternative_distance = current_block.weight + block.loss;
+                    let alternative_distance = current_node.0 + block.loss;
                     // Do the dijkstra bit
                     if alternative_distance < block.weight {
                         block.weight = alternative_distance;
@@ -120,6 +150,15 @@ impl Network {
         let mut min_weight: usize = 999999999;
         for (k, block) in self.blocks.clone(){
             if block.type_ == BlockType::End {
+                min_weight = min(block.weight, min_weight);
+            }
+        }
+        min_weight
+    }
+    fn get_end_block_weights2(&self) -> usize{
+        let mut min_weight: usize = 999999999;
+        for (k, block) in self.blocks.clone(){
+            if block.type_ == BlockType::End && k.steps >= 4 {
                 min_weight = min(block.weight, min_weight);
             }
         }
@@ -150,7 +189,7 @@ struct BigCoord {
 
 impl BigCoord {
     fn from_coord(coord: Coord, direction: Direction) -> Self{
-        Self{coord, direction, steps: 1}
+        Self{coord, direction, steps: 0}
     }
 }
 
@@ -211,32 +250,32 @@ fn get_neighbor_coords(start: BigCoord) -> HashSet<BigCoord>{
 
 fn get_neighbor_coords2(start: BigCoord, limits: (usize, usize)) -> HashSet<BigCoord>{
     let mut coords = HashSet::new();
-    if start.steps > 4{
-        if start.coord.i > 0 && start.direction != Direction::S{
+    if start.steps >= 4{
+        if start.coord.i > 0 && start.direction != Direction::S {
             let new = Coord{i: start.coord.i - 1, j: start.coord.j};
-            if start.direction == Direction::N && start.steps < 10{
+            if start.direction == Direction::N && start.steps < 10 {
                 coords.insert(BigCoord{coord: new, direction: Direction::N, steps: start.steps + 1});
             }
-            else if start.direction != Direction::N{
-                coords.insert(BigCoord{coord: new, direction: Direction::N, steps: 0});
+            else if start.direction != Direction::N {
+                coords.insert(BigCoord{coord: new, direction: Direction::N, steps: 1});
             }  
         }
-        if start.coord.j > 0 && start.direction != Direction::E{
+        if start.coord.j > 0 && start.direction != Direction::E {
             let new = Coord{i: start.coord.i, j: start.coord.j - 1};
-            if start.direction == Direction::W && start.steps < 10{
+            if start.direction == Direction::W && start.steps < 10 {
                 coords.insert(BigCoord{coord: new, direction: Direction::W, steps: start.steps + 1});
             }
-            else if start.direction != Direction::W{
-                coords.insert(BigCoord{coord: new, direction: Direction::W, steps: 0});
+            else if start.direction != Direction::W {
+                coords.insert(BigCoord{coord: new, direction: Direction::W, steps: 1});
             }  
         }
-        if start.coord.i < limits.0 && start.direction != Direction::N{
+        if start.coord.i < limits.0 && start.direction != Direction::N {
             let new = Coord{i: start.coord.i + 1, j: start.coord.j};
-            if start.direction == Direction::S && start.steps < 10{
+            if start.direction == Direction::S && start.steps < 10 {
                 coords.insert(BigCoord{coord: new, direction: Direction::S, steps: start.steps + 1});
             }
-            else if start.direction != Direction::S{
-                coords.insert(BigCoord{coord: new, direction: Direction::S, steps: 0});
+            else if start.direction != Direction::S {
+                coords.insert(BigCoord{coord: new, direction: Direction::S, steps: 1});
             }
         }
         if start.coord.j < limits.1 && start.direction != Direction::W {
@@ -245,7 +284,7 @@ fn get_neighbor_coords2(start: BigCoord, limits: (usize, usize)) -> HashSet<BigC
                 coords.insert(BigCoord{coord: new, direction: Direction::E, steps: start.steps + 1});
             }
             else if start.direction != Direction::E {
-                coords.insert(BigCoord{coord: new, direction: Direction::E, steps: 0});
+                coords.insert(BigCoord{coord: new, direction: Direction::E, steps: 1});
             }  
         }
     }
@@ -272,6 +311,49 @@ fn get_neighbor_coords2(start: BigCoord, limits: (usize, usize)) -> HashSet<BigC
                 }
             },
         };
+    }
+    coords
+}
+
+fn get_neighbor_coords0(start: BigCoord, limits: (usize, usize)) -> HashSet<BigCoord>{
+    let mut coords = HashSet::new();
+    if start.steps >= 0{
+        if start.coord.i > 0 && start.direction != Direction::S {
+            let new = Coord{i: start.coord.i - 1, j: start.coord.j};
+            if start.direction == Direction::N && start.steps < 3 {
+                coords.insert(BigCoord{coord: new, direction: Direction::N, steps: start.steps + 1});
+            }
+            else if start.direction != Direction::N {
+                coords.insert(BigCoord{coord: new, direction: Direction::N, steps: 1});
+            }  
+        }
+        if start.coord.j > 0 && start.direction != Direction::E {
+            let new = Coord{i: start.coord.i, j: start.coord.j - 1};
+            if start.direction == Direction::W && start.steps < 3 {
+                coords.insert(BigCoord{coord: new, direction: Direction::W, steps: start.steps + 1});
+            }
+            else if start.direction != Direction::W {
+                coords.insert(BigCoord{coord: new, direction: Direction::W, steps: 1});
+            }  
+        }
+        if start.coord.i < limits.0 && start.direction != Direction::N {
+            let new = Coord{i: start.coord.i + 1, j: start.coord.j};
+            if start.direction == Direction::S && start.steps < 3 {
+                coords.insert(BigCoord{coord: new, direction: Direction::S, steps: start.steps + 1});
+            }
+            else if start.direction != Direction::S {
+                coords.insert(BigCoord{coord: new, direction: Direction::S, steps: 1});
+            }
+        }
+        if start.coord.j < limits.1 && start.direction != Direction::W {
+            let new = Coord{i: start.coord.i, j: start.coord.j + 1};  
+            if start.direction == Direction::E && start.steps < 3 {
+                coords.insert(BigCoord{coord: new, direction: Direction::E, steps: start.steps + 1});
+            }
+            else if start.direction != Direction::E {
+                coords.insert(BigCoord{coord: new, direction: Direction::E, steps: 1});
+            }  
+        }
     }
     coords
 }
@@ -316,7 +398,7 @@ fn parse_input() -> Network{
 }
 
 fn parse_input2() -> Network{
-    let data = get_input_as_chars(include_str!("../example.txt"));
+    let data = get_input_as_chars(include_str!("../input.txt"));
     let imax = data.len()-1;
     let jmax = data[0].len() -1;
     let mut blocks: HashMap<BigCoord, Block> = HashMap::new();
@@ -354,8 +436,8 @@ fn parse_input2() -> Network{
 }
 
 fn part1(){
-    let mut network = parse_input();
-    network.dijkstra();
+    let mut network = parse_input2();
+    network.dijkstra0();
     println!("Part 1 Answer: {:?}", network.get_end_block_weights());
 }
 
@@ -363,7 +445,7 @@ fn part1(){
 fn part2(){
     let mut network = parse_input2();
     network.dijkstra2();
-    println!("Part 2 Answer: {:?}", network.get_end_block_weights());
+    println!("Part 2 Answer: {:?}", network.get_end_block_weights2());
 }
 
 fn main() {
