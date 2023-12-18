@@ -1,5 +1,6 @@
 mod aoc_parser;
 use aoc_parser::{get_input_as_lines, Direction, Coord64};
+use std::time::Instant;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 struct Vertex{
@@ -103,6 +104,10 @@ fn part2(){
 }
 
 fn main() {
+    let start = Instant::now();
     part1();
+    println!("*** Part 1 Took {:.2?} ***", start.elapsed());
+    let start2 = Instant::now();
     part2();
+    println!("*** Part 2 Took {:.2?} ***", start2.elapsed());
 }
