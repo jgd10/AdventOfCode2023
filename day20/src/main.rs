@@ -1,6 +1,23 @@
 mod aoc_parser;
 use std::time::Instant;
 
+#[derive(Clone, Copy, Debug)]
+enum Pulse {
+    High,
+    Low,
+}
+
+
+enum FlipFlop {
+    On,
+    Off,
+}
+
+
+struct FlipFlopModule {
+    activity: FlipFlop,
+    targets:
+}
 
 fn parse_input() {
 
