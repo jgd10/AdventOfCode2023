@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from typing import Union
+import math
 
 
 class Pulse(Enum):
@@ -18,13 +19,21 @@ class FlipFlopStatus(Enum):
 class TestOutput:
     name: str
     next_pulse: Pulse = Pulse.LOW
+    low_received: int = 0
 
     def __repr__(self):
         return f'TestOutput({self.name})'
 
+    def reset(self):
+        self.low_received = 0
+
     @property
     def targets(self):
         return {}
+
+    @property
+    def state(self):
+        return (self.low_received,)
 
     def receive_pulse(self, pulse_type: Pulse):
         low_counter = 0
@@ -34,6 +43,7 @@ class TestOutput:
                 high_counter += 1
             case Pulse.LOW:
                 low_counter += 1
+                self.low_received += 1
         return low_counter, high_counter
 
 
@@ -46,6 +56,14 @@ class FlipFlop:
 
     def __repr__(self):
         return f'FlipFlop({self.name})'
+
+    def reset(self):
+        self.status = FlipFlopStatus.OFF
+        self.next_pulse = Pulse.LOW
+
+    @property
+    def state(self):
+        return (self.status,)
 
     def switch(self):
         match self.status:
@@ -84,6 +102,15 @@ class Conjunction:
     def __repr__(self):
         return f'Conjunction({self.name})'
 
+    def reset(self):
+        self.next_pulse = Pulse.LOW
+        self.inputs = {name: Pulse.LOW for name in self.inputs}
+
+    @property
+    def state(self):
+        inputs = [(name, pulse) for name, pulse in self.inputs.items()]
+        return tuple(inputs)
+
     def receive_pulse(self, pulse_type: Pulse, giver: str):
         low_counter = 0
         high_counter = 0
@@ -109,6 +136,13 @@ class Broadcaster:
     def __repr__(self):
         return f'Broadcaster()'
 
+    def reset(self):
+        self.targets = {}
+
+    @property
+    def state(self):
+        return (None,)
+
     @property
     def name(self):
         return 'broadcaster'
@@ -125,6 +159,13 @@ class System:
     low_counter: int = 0
     high_counter: int = 0
     button_counter: int = 0
+
+    def reset(self):
+        self.low_counter = 0
+        self.high_counter = 0
+        self.button_counter = 0
+        for module in self.modules.values():
+            module.reset()
 
     def push_button(self):
         self.button_counter += 1
@@ -188,19 +229,22 @@ class System:
             self.push_button()
         return self.low_counter * self.high_counter
 
-    def find_button_pushes_for_rx_to_receive_low(self):
-        states = {}
-        while self.low_counter == 0:
-            # new_state = (self.conjunctions_state, self.flipflops_state)
-            # if new_state in states:
-            #     print(f'Cycle completed at {self.button_counter} presses')
-            #     print(f'Previous iteration occurred at {states[new_state]}')
-            #     break
-            # else:
-            #     states[new_state] = self.button_counter
+    @property
+    def state(self):
+        return (self.conjunctions_state, self.flipflops_state)
 
-            self.push_button()
-        return self.button_counter
+    def find_button_pushes_for_rx_to_receive_low(self):
+        loops = [v for v in self.broadcaster.targets.values()]
+        number = []
+        for starter in loops:
+            self.reset()
+            self.broadcaster.targets = {starter.name: starter}
+            states = {}
+            while self.state not in states:
+                states[self.state] = self.button_counter
+                self.push_button()
+            number.append(self.button_counter)
+        return math.lcm(*number)
 
 
 def parse_row_as_conjunction(line: str):
@@ -238,14 +282,14 @@ def parse_input():
     return System(modules)
 
 
-def part1():
+def part2():
     system = parse_input()
     system.connect_modules()
-    print(f'Part 1 Answer: {system.find_button_pushes_for_rx_to_receive_low()}')
+    print(f'Part 2 Answer: {system.find_button_pushes_for_rx_to_receive_low()}')
 
 
 def main():
-    part1()
+    part2()
 
 
 if __name__ == '__main__':
