@@ -13,12 +13,12 @@ impl Tower {
         let mut fallen_bricks = BTreeSet::new(); //self.get_bricks_at_base().clone();
         for brick in self.bricks.clone(){
             let mut mut_brick = brick.clone();
-            if fallen_bricks.len() > 0{
-                let top_brick: Brick = fallen_bricks.clone().pop_last().unwrap();
-                let zdiff: i64 = mut_brick.ends.1.z - mut_brick.ends.0.z;
-                mut_brick.ends.0.z = top_brick.ends.1.z + 5;
-                mut_brick.ends.1.z = top_brick.ends.1.z + 5 + zdiff;
-            }
+            // if fallen_bricks.len() > 0{
+            //     let top_brick: Brick = fallen_bricks.clone().pop_last().unwrap();
+            //     let zdiff: i64 = mut_brick.ends.1.z - mut_brick.ends.0.z;
+            //     mut_brick.ends.0.z = top_brick.ends.1.z + 5;
+            //     mut_brick.ends.1.z = top_brick.ends.1.z + 5 + zdiff;
+            // }
 
             while self.brick_in_freefall(mut_brick.clone(), fallen_bricks.clone()){
                 mut_brick.ends.0.z -= 1;
@@ -51,15 +51,21 @@ impl Tower {
     fn find_bricks_could_be_disintegrated(&mut self) -> usize{
         let mut total: usize = 0;
         for brick in self.bricks.clone(){
-            let supported_bricks = self.get_neighbours_to(brick);
+            let supported_bricks = self.get_neighbours_to(brick.clone());
             if supported_bricks.len() > 0{
+                let mut other_supports: HashSet<bool> = HashSet::new();
                 for supported_brick in supported_bricks{
                     let supporting_bricks = self.get_supporting_bricks(supported_brick);
                     //dbg!(supporting_bricks.clone());
                     if supporting_bricks.len() > 1{
-                        total += 1;
-                        break;
+                        other_supports.insert(true);
                     }
+                    else {
+                        other_supports.insert(false);
+                    }
+                }
+                if other_supports.iter().all(|x| *x) {
+                    total += 1;
                 }
             }
             else {
@@ -95,7 +101,6 @@ impl Tower {
                 }
             }
         }
-        dbg!(load_bearers.clone());
         load_bearers
     }
     fn get_bricks_at_base(&self) -> BTreeSet<Brick>{
