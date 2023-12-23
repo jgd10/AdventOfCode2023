@@ -1,5 +1,5 @@
 mod aoc_parser;
-use std::{time::Instant, collections::{BTreeSet, HashMap, HashSet}};
+use std::{time::Instant, collections::{BTreeSet, HashMap, HashSet}, fs::File, io::{Write, BufWriter}};
 use aoc_parser::{get_input_as_lines, Coord3D};
 
 
@@ -27,8 +27,25 @@ impl Tower {
 
             fallen_bricks.insert(mut_brick.clone());
         }
-        self.bricks = fallen_bricks;
+        self.bricks = fallen_bricks.clone();
+        let _ = self.save();
+        println!("done!")
     
+    }
+
+    fn save(&self) -> std::io::Result<()>{
+        let file = File::create("./input3.txt")?;
+        let mut writer = BufWriter::new(file);
+        for brick in self.bricks.clone(){
+            let brick_as_string = format!(
+                "{},{},{}~{},{},{}\n", 
+                brick.ends.0.x, brick.ends.0.y, brick.ends.0.z, 
+                brick.ends.1.x, brick.ends.1.y, brick.ends.1.z
+            );
+            writer.write_all(brick_as_string.as_bytes())?;
+        }
+        writer.flush()?;
+        Ok(())
     }
 
     fn brick_in_freefall(&mut self, mut brick: Brick, fallen_bricks: BTreeSet<Brick>) -> bool{
