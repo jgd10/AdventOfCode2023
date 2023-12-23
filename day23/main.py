@@ -195,11 +195,6 @@ class Trail:
                 results[intersection].append((length, n))
         return results
 
-    def depth_first_search3(self, start: Point, distance: int, previous: set[Point]):
-        current_distance =
-
-        return
-
 
 
     def depth_first_search2(self, start: Point, end: Point):
@@ -255,12 +250,13 @@ def part2():
         if not would_create_a_cycle(biggest_trail, edge):
             biggest_trail.add(edge)
     answer = sum([edges[k] for k in biggest_trail])
-    #with open('../input2.txt', 'w') as f:
-    #    for k, v in results.items():
-    #        string = ''
-    #        for val in
-    #        f.write(f'{k.x},{k.y}-')
-    #print(results)
+    rename = {k: c for k, c in zip(results.keys(), list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')+['AA', 'BB', 'CC', 'DD', 'EE', 'FF', 'GG', 'HH', 'II', 'JJ', 'KK', 'LL', 'MM'])}
+    with open('./input2.txt', 'w') as f:
+        for k, v in results.items():
+            string = ';'
+            nodes = string.join([f'{rename[val[1]]}={val[0]}' for val in v])
+            f.write(f'{rename[k]} - {nodes}\n')
+    print(results)
     #trail.depth_first_search2(start, end)
     print(answer)
 

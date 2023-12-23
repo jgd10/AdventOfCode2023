@@ -1,6 +1,6 @@
 mod aoc_parser;
 use std::{time::Instant, collections::{HashMap, BTreeSet, BTreeMap}, cmp::max};
-use aoc_parser::{Coord32, get_input_as_chars};
+use aoc_parser::{Coord32, get_input_as_chars, get_input_as_lines};
 
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Ord, Hash)]
@@ -61,6 +61,11 @@ impl Trail {
         (xmax, ymax)
     }
     fn find_longest_path_with_slopes(&mut self, start: Coord32, distance: usize, mut previous: BTreeSet<Coord32>) -> usize{
+        let key = (start, previous.clone());
+        if self.cache.contains_key(&key){
+            dbg!("cache used!");
+            return self.cache.get(&key).unwrap() + distance;
+        }
         let mut current_distance = distance;
         previous.insert(start);
         let mut current_tile = self.tiles.get(&start).unwrap();
@@ -91,6 +96,7 @@ impl Trail {
                 self.distances.insert(neighbor, *max( &mut current_distance, &mut dist));
             }
         }
+        self.cache.insert(key, current_distance);
         current_distance
     }
     fn find_longest_path_without_slopes(&mut self, start: Coord32, distance: usize, mut previous: BTreeSet<Coord32>) -> usize{
@@ -159,6 +165,11 @@ fn parse_input() -> Trail{
     }
     Trail{tiles, ground, distances, cache: BTreeMap::new()}
 
+}
+
+fn parse_input2(){
+    let data = get_input_as_lines("../input2.txt");
+    
 }
 
 fn part1(){
