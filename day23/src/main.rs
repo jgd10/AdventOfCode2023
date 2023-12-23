@@ -1,5 +1,5 @@
 mod aoc_parser;
-use std::{time::Instant, collections::{HashMap, HashSet}, cmp::max};
+use std::{time::Instant, collections::{HashMap, BTreeSet, BTreeMap}, cmp::max};
 use aoc_parser::{Coord32, get_input_as_chars};
 
 
@@ -45,8 +45,9 @@ impl Tile {
 
 struct Trail {
     tiles: HashMap<Coord32, Tile>,
-    ground: HashSet<Coord32>,
-    distances: HashMap<Coord32, usize>
+    ground: BTreeSet<Coord32>,
+    distances: HashMap<Coord32, usize>,
+    cache: BTreeMap<(Coord32, BTreeSet<Coord32>), usize>,
 
 } 
 impl Trail {
@@ -59,7 +60,7 @@ impl Trail {
         }
         (xmax, ymax)
     }
-    fn find_longest_path_with_slopes(&mut self, start: Coord32, distance: usize, mut previous: HashSet<Coord32>) -> usize{
+    fn find_longest_path_with_slopes(&mut self, start: Coord32, distance: usize, mut previous: BTreeSet<Coord32>) -> usize{
         let mut current_distance = distance;
         previous.insert(start);
         let mut current_tile = self.tiles.get(&start).unwrap();
@@ -92,7 +93,12 @@ impl Trail {
         }
         current_distance
     }
-    fn find_longest_path_without_slopes(&mut self, start: Coord32, distance: usize, mut previous: HashSet<Coord32>) -> usize{
+    fn find_longest_path_without_slopes(&mut self, start: Coord32, distance: usize, mut previous: BTreeSet<Coord32>) -> usize{
+        let key = (start, previous.clone());
+        if self.cache.contains_key(&key){
+            dbg!("cache used!");
+            return self.cache.get(&key).unwrap() + distance;
+        }
         let mut current_distance = distance;
         previous.insert(start);
         let mut current_tile = self.tiles.get(&start).unwrap();
@@ -123,6 +129,7 @@ impl Trail {
                 self.distances.insert(neighbor, *max( &mut current_distance, &mut dist));
             }
         }
+        self.cache.insert(key, current_distance);
         current_distance
     }
 }
@@ -130,7 +137,7 @@ impl Trail {
 fn parse_input() -> Trail{
     let data = get_input_as_chars(include_str!("../input.txt"));
     let mut tiles: HashMap<Coord32, Tile> = HashMap::new();
-    let mut ground: HashSet<Coord32> = HashSet::new();
+    let mut ground: BTreeSet<Coord32> = BTreeSet::new();
     let mut distances: HashMap<Coord32, usize> = HashMap::new();
     for (j, row) in data.iter().enumerate(){
         for (i, c) in row.iter().enumerate() {
@@ -150,7 +157,7 @@ fn parse_input() -> Trail{
 
         }
     }
-    Trail{tiles, ground, distances}
+    Trail{tiles, ground, distances, cache: BTreeMap::new()}
 
 }
 
@@ -158,7 +165,7 @@ fn part1(){
     let mut trail: Trail = parse_input();
     let start = Coord32{x: 1 as i32, y: 0 as i32};
     let limits = trail.get_limits();
-    trail.find_longest_path_with_slopes(start, 0, HashSet::new());
+    trail.find_longest_path_with_slopes(start, 0, BTreeSet::new());
     println!("Part 1 Answer: {}", trail.distances.get(&Coord32{x: limits.0-1, y: limits.1}).unwrap());
 }
 
@@ -167,7 +174,7 @@ fn part2(){
     let mut trail: Trail = parse_input();
     let start = Coord32{x: 1 as i32, y: 0 as i32};
     let limits = trail.get_limits();
-    trail.find_longest_path_without_slopes(start, 0, HashSet::new());
+    trail.find_longest_path_without_slopes(start, 0, BTreeSet::new());
     println!("Part 2 Answer: {}", trail.distances.get(&Coord32{x: limits.0-1, y: limits.1}).unwrap());
 }
 

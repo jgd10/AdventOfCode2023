@@ -168,6 +168,40 @@ class Trail:
             self._cache = {}
         return self._cache
 
+    def get_intersection_tiles(self):
+        intersections = []
+        for key in self.trail_tiles:
+            neighbours = [v for v in self.tiles[key].get_neighbours0() if v in self.trail_tiles]
+            if len(neighbours) >= 3:
+                intersections.append(key)
+        return intersections
+
+    def lengths_from_intersections(self, ends):
+        intersections = self.get_intersection_tiles() + ends
+        results = {i: [] for i in intersections}
+        for intersection in intersections:
+            start = intersection
+            visited = {start}
+            neighbours = [n for n in self.tiles[start].get_neighbours0() if n in self.trail_tiles and n not in visited]
+            for neighbour in neighbours:
+                length = 1
+                visited = {neighbour, start}
+                neighbours = [p for p in self.tiles[neighbour].get_neighbours0() if p not in visited]
+                while len(neighbours) == 1:
+                    n = neighbours.pop(0)
+                    visited.add(n)
+                    length += 1
+                    neighbours = [p for p in self.tiles[n].get_neighbours0() if p not in visited]
+                results[intersection].append((length, n))
+        return results
+
+    def depth_first_search3(self, start: Point, distance: int, previous: set[Point]):
+        current_distance =
+
+        return
+
+
+
     def depth_first_search2(self, start: Point, end: Point):
         self.tile_path[start].add(start)
         while start != end:
@@ -193,14 +227,42 @@ def part1():
     trail.depth_first_search(start, 0, set())
     print(trail.distances[end])
 
+def would_create_a_cycle(network, edge):
+    point1, point2 = edge
+    node1, node2 = False, False
+    for edge_ in network:
+        if point1 in edge_:
+            node1 = True
+    for edge_ in network:
+        if point2 in edge_:
+            node2 = True
+    return node1 and node2
 
 def part2():
     trail = Trail.from_file(pathlib.Path('./input.txt'))
     trail.set_neighbours()
     start = Point(1, 0)
     end = Point(trail.xmax - 1, trail.ymax)
-    trail.depth_first_search2(start, end)
-    print(len(trail.tile_path[end]))
+    results = trail.lengths_from_intersections([start, end])
+    edges = {(p, v2[1]): v2[0] for p, v in results.items() for v2 in v }
+    nodes = {p: [v[1] for v in nodes] for p, nodes in results.items()}
+    edges2 = list(edges)
+    edges2.sort(key=lambda x: edges[x])
+    biggest_trail = set()
+    biggest_trail.add(edges2.pop(0))
+    while len(biggest_trail) < len(nodes) - 1 and edges2:
+        edge = edges2.pop(0)
+        if not would_create_a_cycle(biggest_trail, edge):
+            biggest_trail.add(edge)
+    answer = sum([edges[k] for k in biggest_trail])
+    #with open('../input2.txt', 'w') as f:
+    #    for k, v in results.items():
+    #        string = ''
+    #        for val in
+    #        f.write(f'{k.x},{k.y}-')
+    #print(results)
+    #trail.depth_first_search2(start, end)
+    print(answer)
 
 
 def main():
