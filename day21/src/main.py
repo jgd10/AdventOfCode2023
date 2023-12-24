@@ -34,17 +34,16 @@ class Garden:
                         new_queue.append(coord)
             queue = new_queue
             #self.plot(queue, f'{_k+1}/{n} steps traversed, # possible endpoints: {len(queue)}', _k==n-1)
-            print(f'{_k+1}/{n} steps traversed, # possible endpoints: {len(queue)}')
+            if _k in [64, 64+131, 64+131*2]:
+                print(f'{_k+1}/{n} steps traversed, # possible endpoints: {len(queue)}')
+            #print(f'{_k+1}/{n} steps traversed, # possible endpoints: {len(queue)}')
         return queue
-
 
     def plot(self, coords: list[Coord], title: str, end=False):
         if self.figure is None:
             self.figure = plotille.Figure()
             self.figure.set_x_limits(-5, 136)
             self.figure.set_y_limits(-5, 136)
-
-
         xs = [c.point.x for c in coords]
         ys = [c.point.y for c in coords]
         rock_x = [p.x for p in self.rocks]
@@ -62,7 +61,6 @@ class Garden:
         if not end:
             plt.clear_data()
             plt.clear_terminal()
-
 
     def get_next_coords(self, coord: Coord):
         west = Coord(Point(coord.point.x - 1, coord.point.y), coord.x_iteration, coord.y_iteration)
@@ -115,7 +113,7 @@ def parse_input(fpath: pathlib.Path):
 
 def part1():
     garden = parse_input(fpath=pathlib.Path('../input.txt'))
-    result = garden.unique_squares_after_many_steps(65)
+    result = garden.unique_squares_after_many_steps(65+131*2)
     print(f'Part 1 Answer: {len(result)}')
 
 

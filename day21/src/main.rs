@@ -71,40 +71,40 @@ impl Garden {
 
         queue
     }
-    fn unique_squares_after_many_steps(&self, n: usize) -> (BTreeSet<Coord32>, HashMap<(i32, i32), usize>){
-        let mut queue: BTreeSet<Coord32> = BTreeSet::from([self.start]);
-        let mut states: HashMap<(i32, i32), BTreeSet<usize>> = HashMap::new();
-        let mut stabilised: HashMap<(i32, i32), usize> = HashMap::new();
-        for _k in 0..n{
-            let iteration_states = get_iteration_states(queue.clone());
-            for (k, v) in iteration_states{
-                if !states.contains_key(&k){
-                    states.insert(k, v.len());
-                    stabilised.insert(k, v.len());
-                }
-                else {
-                    if states.get(&k).unwrap().contains(&v.len()) && *stabilised.get(&k).unwrap() == 0 {
-                        dbg!(_k+1);
-                        stabilised.entry(k).and_modify(|x| {let x = _k+1;}).or_insert(0);
-                    }
-                }
-            }
-            let mut new_queue: BTreeSet<Coord32> = BTreeSet::new();
-            for current_square in queue.clone(){
-                let next_coords: BTreeSet<Coord32> = self.get_next_coords(current_square);
-                for coord in next_coords{
-                    if self.ground.contains(&coord.get_base()){
-                        new_queue.insert(coord);
-                    }
-                }
+//    fn unique_squares_after_many_steps(&self, n: usize) -> (BTreeSet<Coord32>, HashMap<(i32, i32), usize>){
+//        let mut queue: BTreeSet<Coord32> = BTreeSet::from([self.start]);
+//        let mut states: HashMap<(i32, i32), BTreeSet<usize>> = HashMap::new();
+//        let mut stabilised: HashMap<(i32, i32), usize> = HashMap::new();
+//        for _k in 0..n{
+//            let iteration_states = get_iteration_states(queue.clone());
+//            for (k, v) in iteration_states{
+//                if !states.contains_key(&k){
+//                    states.insert(k, v.len());
+//                    stabilised.insert(k, v.len());
+//                }
+//                else {
+//                    if states.get(&k).unwrap().contains(&v.len()) && *stabilised.get(&k).unwrap() == 0 {
+//                        dbg!(_k+1);
+//                        stabilised.entry(k).and_modify(|x| {let x = _k+1;}).or_insert(0);
+//                    }
+//                }
+//            }
+//            let mut new_queue: BTreeSet<Coord32> = BTreeSet::new();
+//            for current_square in queue.clone(){
+//                let next_coords: BTreeSet<Coord32> = self.get_next_coords(current_square);
+//                for coord in next_coords{
+//                    if self.ground.contains(&coord.get_base()){
+//                        new_queue.insert(coord);
+//                    }
+//                }
+//
+//            }
+//            queue = new_queue;
+//
+//        }
+//        (queue, stabilised)
 
-            }
-            queue = new_queue;
-
-        }
-        (queue, stabilised)
-
-    }
+//}
     fn get_next_coords(&self, coordinate: Coord32) -> BTreeSet<Coord32> {
         let mut west_new = Coord32{x: coordinate.x - 1, y: coordinate.y, x_iteration: coordinate.x_iteration, y_iteration: coordinate.y_iteration};
         let mut east_new = Coord32{x: coordinate.x + 1, y: coordinate.y, x_iteration: coordinate.x_iteration, y_iteration: coordinate.y_iteration};
@@ -202,24 +202,27 @@ fn test_example_part2b(){
     assert_eq!(result.len(), 6536);
 }
 
-fn part1(){
+fn parts(){
     let garden: Garden = parse_input(include_str!("../input.txt"));
-    let result: BTreeSet<Coord32> = garden.unique_squares_after_n_steps(64);
-    println!("Part 1 Answer: {}", result.len());
+    let result: BTreeSet<Coord32> = garden.unique_squares_after_n_steps(65);
+    println!("Part 1 Answer x = 0: {}", result.len());
+    let result: BTreeSet<Coord32> = garden.unique_squares_after_n_steps(65+131);
+    println!("Part 1 Answer x = 1: {}", result.len());
+    let result: BTreeSet<Coord32> = garden.unique_squares_after_n_steps(65+131+131);
+    println!("Part 1 Answer x = 2: {}", result.len());
+    println!("Use these answers to derive the quadratic equation");
+    println!("f(x) = 14795*x*x + 14878*x + 3744");
+    println!("and evaluate it at f(202300)");
+    let a: i64 = 14795;
+    let b: i64 = 14878;
+    let c: i64 = 3744;
+    let x: i64 = 202300;
+    println!("{}", a*x*x + b*x + c);
+
 }
-
-
-fn part2(){
-    let garden: Garden = parse_input(include_str!("../input.txt"));
-    let result: (BTreeSet<Coord32>, HashMap<(i32, i32), usize>) = garden.unique_squares_after_many_steps(100);
-    dbg!(result.1);
-    println!("Part 2 Answer: {}", result.0.len());}
 
 fn main() {
     let start = Instant::now();
-    part1();
+    parts();
     println!("*** Part 1 Took {:.2?} ***", start.elapsed());
-    let start2 = Instant::now();
-    part2();
-    println!("*** Part 2 Took {:.2?} ***", start2.elapsed());
 }
