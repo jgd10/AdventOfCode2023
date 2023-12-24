@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import numpy as np
 import pathlib
 from collections import namedtuple
+import sympy as sym
 
 
 @dataclass
@@ -10,9 +11,17 @@ class Vector:
     y: int
     z: int
 
+    def cross(self, other):
+        return Vector(self.y * other.z - self.z * other.y,
+                      self.z * other.x - self.x * other.z,
+                      self.x * other.y - self.y * other.x)
+
+    def is_zero(self):
+        return self.x == 0 and self.y == 0 and self.z == 0
 
 @dataclass
 class Hailstone:
+    id_: int
     s: Vector
     v: Vector
     _xygrad: float = None
@@ -51,7 +60,7 @@ class Blizzard:
         x_, y_, z_ = [], [], []
         vx_, vy_, vz_ = [], [], []
         stones = []
-        for row in data:
+        for i, row in enumerate(data):
             position, velocity = row.split(' @ ')
             positions = position.split(',')
             x, y, z = int(positions[0]), int(positions[1]), int(positions[2])
@@ -65,20 +74,34 @@ class Blizzard:
             vz_.append(vz)
             vel = Vector(vx, vy, vz)
             pos = Vector(x, y, z)
-            stones.append(Hailstone(pos, vel))
+            stones.append(Hailstone(i, pos, vel))
         return cls(np.array(x_), np.array(y_), np.array(z_), np.array(vx_), np.array(vy_), np.array(vz_), stones)
+
+    def parallel_vectors(self):
+        counter = 0
+        pairs_done = set()
+        for stone1 in self.stones:
+            for stone2 in self.stones:
+                pair = frozenset([stone1.id_, stone2.id_])
+                if stone2.id_ == stone1.id_ or pair in pairs_done:
+                    pass
+                else:
+                    vec = stone1.v.cross(stone2.v)
+                    print(vec)
+                    if vec.is_zero():
+                        counter += 1
+        return counter
 
     def will_hailstones_enter_xy_slice(self, limits: Limits):
         counter = 0
-        pairs_done = []
+        pairs_done = set()
         for stone1 in self.stones:
             for stone2 in self.stones:
-                pair = [stone1, stone2]
-                if stone2 == stone1 or pair in pairs_done:
+                pair = frozenset([stone1.id_, stone2.id_])
+                if stone2.id_ == stone1.id_ or pair in pairs_done:
                     pass
                 else:
-                    pairs_done.append(pair)
-                    pairs_done.append(pair[::-1])
+                    pairs_done.add(pair)
                     if stone2.m_xy != stone1.m_xy:
                         x = (stone2.c_xy - stone1.c_xy) / (stone1.m_xy - stone2.m_xy)
                         y = stone1.m_xy*x + stone1.c_xy
@@ -93,11 +116,27 @@ class Blizzard:
 
 def part1():
     blizzard = Blizzard.from_file(pathlib.Path('./input.txt'))
-    answer = blizzard.will_hailstones_enter_xy_slice(limits=Limits(200000000000000, 400000000000000))
+    answer = blizzard.will_hailstones_enter_xy_slice(
+        limits=Limits(200_000_000_000_000, 400_000_000_000_000)
+    )
     print(answer)
 
+
 def part2():
-    pass
+    blizzard = Blizzard.from_file(pathlib.Path('./input.txt'))
+    symbols = sym.symbols(
+        'x0,y0,z0,u0,v0,w0,t1,t2,t3'
+    )
+    x0, y0, z0, u0, v0, w0, t1, t2, t3 = symbols
+    equations = []
+    times = [t1, t2, t3]
+    for stone, t in zip(blizzard.stones[:3], times):
+        eqx = sym.Eq(x0 + u0 * t, stone.v.x * t + stone.s.x)
+        eqy = sym.Eq(y0 + v0 * t, stone.v.y * t + stone.s.y)
+        eqz = sym.Eq(z0 + w0 * t, stone.v.z * t + stone.s.z)
+        equations.extend([eqx, eqy, eqz])
+    result = sym.solve(equations, symbols)[0]
+    print(sum([r for r in result[:3]]))
 
 
 def main():
