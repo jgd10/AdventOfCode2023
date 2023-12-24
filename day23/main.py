@@ -239,17 +239,6 @@ def part2():
     start = Point(1, 0)
     end = Point(trail.xmax - 1, trail.ymax)
     results = trail.lengths_from_intersections([start, end])
-    edges = {(p, v2[1]): v2[0] for p, v in results.items() for v2 in v }
-    nodes = {p: [v[1] for v in nodes] for p, nodes in results.items()}
-    edges2 = list(edges)
-    edges2.sort(key=lambda x: edges[x])
-    biggest_trail = set()
-    biggest_trail.add(edges2.pop(0))
-    while len(biggest_trail) < len(nodes) - 1 and edges2:
-        edge = edges2.pop(0)
-        if not would_create_a_cycle(biggest_trail, edge):
-            biggest_trail.add(edge)
-    answer = sum([edges[k] for k in biggest_trail])
     rename = {k: c for k, c in zip(results.keys(), list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')+['AA', 'BB', 'CC', 'DD', 'EE', 'FF', 'GG', 'HH', 'II', 'JJ', 'KK', 'LL', 'MM'])}
     with open('./input2.txt', 'w') as f:
         for k, v in results.items():
@@ -258,7 +247,6 @@ def part2():
             f.write(f'{rename[k]} - {nodes}\n')
     print(results)
     #trail.depth_first_search2(start, end)
-    print(answer)
 
 
 def main():
