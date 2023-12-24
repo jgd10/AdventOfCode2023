@@ -175,10 +175,7 @@ class Network:
         for edge in start.edges:
             n = self.nodes[edge.end]
             if n not in previous_nodes:
-                new_nodes = previous_nodes[:]
-                self.find_longest_path_to_end(
-                        n, new_nodes
-                    )
+                self.find_longest_path_to_end(n, previous_nodes[:])
         return
 
 
