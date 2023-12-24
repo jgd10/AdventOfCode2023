@@ -239,6 +239,7 @@ class System2:
                 raise TypeError
         self.workflows[destination_](gear_success)
         return gear_fail
+
     def parse_workflow(self, line: str) -> None:
         parts = line.split('{')
         name = parts.pop(0)
